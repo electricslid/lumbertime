@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cavecrawler Maps</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#13131b] text-white flex flex-col items-center min-h-screen p-6">
+
+  <header class="text-center mb-6">
+    <h1 class="text-3xl font-bold">Cavecrawler Maps</h1>
+    <p class="opacity-70">Lumber Tycoon 2 Maze Path Viewer</p>
+  </header>
+
+  <h2 id="path-title" class="text-xl mb-2"></h2>
+  <h3 id="countdown" class="text-sm mb-4 opacity-80"></h3>
+
+  <div id="image-container" class="w-[800px] h-[500px] flex items-center justify-center">
+    <img id="path-image" class="max-w-full max-h-full rounded-lg shadow-lg" />
+  </div>
+
+  <div class="flex space-x-4 mt-4">
+    <button id="prev-btn" class="px-4 py-2 bg-white text-black rounded-lg">&lt;</button>
+    <div id="offset-info" class="px-4 py-2"></div>
+    <button id="next-btn" class="px-4 py-2 bg-white text-black rounded-lg">&gt;</button>
+  </div>
+
+  <footer class="mt-10">
+    <a href="http://www.youtube.com/@lumberingtime"
+       target="_blank"
+       class="text-blue-400 hover:underline text-lg">
+       Visit my YouTube Channel 🎥
+    </a>
+  </footer>
+
+  <script>
+    const period = 8
+    const unitModifier = 24 * 60 * 60 * 4 // 4 days
+    let cycleOffset = 0
+
+    const pathTitle = document.getElementById('path-title')
+    const countdown = document.getElementById('countdown')
+    const pathImage = document.getElementById('path-image')
+    const offsetInfo = document.getElementById('offset-info')
+
+    document.getElementById('prev-btn').addEventListener('click', () => {
+      cycleOffset--
+      update()
+    })
+    document.getElementById('next-btn').addEventListener('click', () => {
+      cycleOffset++
+      update()
+    })
+
+    function secondsToDhms(seconds) {
+      const d = Math.floor(seconds / (3600*24))
+      const h = Math.floor((seconds % (3600*24)) / 3600)
+      const m = Math.floor((seconds % 3600) / 60)
+      const s = Math.floor(seconds % 60)
+      const parts = []
+      if (d) parts.push(d + (d===1 ? " day" : " days"))
+      if (h) parts.push(h + (h===1 ? " hour" : " hours"))
+      if (m) parts.push(m + (m===1 ? " minute" : " minutes"))
+      if (s) parts.push(s + (s===1 ? " second" : " seconds"))
+      return parts.join(", ")
+    }
+
+    function getTime() {
+      return Math.floor(Date.now() / 1000) + cycleOffset * unitModifier
+    }
+
+    function timeUntilNextCycle() {
+      const time = getTime()
+      return unitModifier - (time % unitModifier)
+    }
+
+    function getCycle() {
+      const time = getTime()
+      return Math.floor((time % (period * unitModifier)) / unitModifier)
+    }
+
+    function update() {
+      const cycle = getCycle()
+      offsetInfo.textContent = cycleOffset
+      countdown.textContent = "Reloads in " + secondsToDhms(timeUntilNextCycle())
+
+      if (cycleOffset === 0) {
+        pathTitle.textContent = "Current path:"
+      } else if (cycleOffset > 0) {
+        pathTitle.textContent = `Path ${cycleOffset*4} days in the future:`
+      } else {
+        pathTitle.textContent = `Path ${Math.abs(cycleOffset*4)} days ago:`
+      }
+
+      switch (cycle) {
+        case 0: pathImage.src = "assets/Path0.png"; break
+        case 1: pathImage.src = "assets/Path1.png"; break
+        case 2: pathImage.src = "assets/Path2.png"; break
+        case 3: pathImage.src = "assets/Path3.png"; break
+        case 4: pathImage.src = "assets/Path4.png"; break
+        case 5:
+          pathImage.src = "assets/Path5_Blocked.png"
+          pathTitle.textContent = "Maze is closed (all doors blocked)"
+          break
+        case 6: pathImage.src = "assets/Path6.png"; break
+        case 7: pathImage.src = "assets/Path7.png"; break
+      }
+    }
+
+    update()
+    setInterval(update, 1000)
+  </script>
+</body>
+</html>

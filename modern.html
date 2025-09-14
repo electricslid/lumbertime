@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<link
+			rel="icon"
+			href="favicon.ico"
+			type="image/x-icon"
+		/>
+		<!--<link
+			rel="stylesheet"
+			href="styles.css"
+		/>-->
+		<link
+			rel="preconnect"
+			href="https://fonts.googleapis.com"
+		/>
+		<link
+			rel="preconnect"
+			href="https://fonts.gstatic.com"
+			crossorigin
+		/>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap"
+			rel="stylesheet"
+		/>
+		<script src="https://cdn.tailwindcss.com"></script>
+
+		<!-- HTML Meta Tags -->
+		<title>Modern Painting Generator</title>
+		<meta
+			name="description"
+			content="Generate and share modern paintings from Lumber Tycoon 2"
+		/>
+
+		<!-- Facebook Meta Tags -->
+		<meta
+			property="og:url"
+			content="https://qaptivator.github.io/cavecrawler-mapper/"
+		/>
+		<meta
+			property="og:type"
+			content="website"
+		/>
+		<meta
+			property="og:title"
+			content="Modern Painting Generator"
+		/>
+		<meta
+			property="og:description"
+			content="Generate and share modern paintings from Lumber Tycoon 2"
+		/>
+		<meta
+			property="og:image"
+			content="https://qaptivator.github.io/cavecrawler-mapper/assets/painting-banner.png"
+		/>
+
+		<!-- Twitter Meta Tags -->
+		<meta
+			name="twitter:card"
+			content="summary_large_image"
+		/>
+		<meta
+			property="twitter:domain"
+			content="qaptivator.github.io"
+		/>
+		<meta
+			property="twitter:url"
+			content="https://qaptivator.github.io/cavecrawler-mapper/"
+		/>
+		<meta
+			name="twitter:title"
+			content="Modern Painting Generator"
+		/>
+		<meta
+			name="twitter:description"
+			content="Generate and share modern paintings from Lumber Tycoon 2"
+		/>
+		<meta
+			name="twitter:image"
+			content="https://qaptivator.github.io/cavecrawler-mapper/assets/painting-banner.png"
+		/>
+	</head>
+	<body
+		id="container"
+		class="flex flex-col items-center roboto-regular text-white bg-[#13131b] text-center"
+	>
+		<header class="flex w-fit pt-5 pb-10 text-left">
+			<img
+				src="assets/icon.png"
+				class="w-[100px] h-[100px] mr-5"
+			/>
+			<div class="block">
+				<h1 class="font-bold text-3xl">Modern Painting Generator</h1>
+				<footer class="text-base">
+					<a href="/cavecrawler-mapper/">Go back to the main page</a><br />
+					Generate and share modern paintings from Lumber Tycoon 2
+				</footer>
+			</div>
+		</header>
+		<section class="text-sm pb-3 max-w-[600px]">
+			<a
+				href="https://lumber-tycoon-2.fandom.com/wiki/Modern_Gift"
+				target="_blank"
+				>Modern Painting</a
+			>
+			is a rare painting, which could be purchased in 2017. It showcases two
+			randomly placed rectangles with random shapes on a blank white canvas.<br />
+			With this tool, you can generate and share your paintings without even
+			paying $18,200!<br />
+			Thanks to people of LT2 Wiki Discord and Axivele for suggesting this idea!
+		</section>
+		<h2
+			id="seed-text"
+			class="text-2xl mb-2 mt-4"
+		></h2>
+		<canvas id="main-canvas"></canvas>
+		<div class="flex text-black mt-4 text-xl space-x-2">
+			<button
+				id="enter-seed-btn"
+				type="button"
+				class="order-1 p-2 bg-white rounded-lg"
+			>
+				Enter seed
+			</button>
+			<button
+				id="generate-btn"
+				type="button"
+				class="order-1 p-2 bg-neutral-300 rounded-lg font-semibold"
+			>
+				Express [E]
+			</button>
+			<button
+				id="share-btn"
+				type="button"
+				class="order-1 p-2 bg-white rounded-lg"
+			>
+				Share
+			</button>
+			<button
+				id="download-btn"
+				type="button"
+				class="order-1 p-2 bg-white rounded-lg"
+			>
+				Download
+			</button>
+		</div>
+		<!--<div id="content" class="block text-center">
+      <div class="text-xs pb-3">
+        Every 4 days, the maze changes the path to cavecrawler wood, so with
+        this tool you can find the working map every 4 days.<br />
+        Note: the path to cavecrawler is decided during server creation, so if
+        you are playing on an old server, current path may not work.
+      </div>
+    </div>-->
+		<script>
+			const IMAGE_SIZE = 500
+			const BORDER_WIDTH = 25
+			const BORDER_COLOR = '#554f56'
+			const CANVAS_COLOR = '#ffffff'
+
+			const MIN_SIZE = 100
+			const BOUNDS_MARGIN = 200
+			const TRUE_BOUNDS_MIN = BORDER_WIDTH
+			const TRUE_BOUNDS_MAX = IMAGE_SIZE - BORDER_WIDTH - BOUNDS_MARGIN
+
+			function randomInt(min, max) {
+				min = Math.ceil(min)
+				max = Math.floor(max)
+				if (min === max) return min
+				return Math.floor(Math.random() * (max - min + 1)) + min
+			}
+
+			const canvas = document.getElementById('main-canvas')
+			canvas.width = IMAGE_SIZE
+			canvas.height = IMAGE_SIZE
+			const ctx = canvas.getContext('2d')
+			const seedText = document.getElementById('seed-text')
+			const generateBtn = document.getElementById('generate-btn')
+			const enterSeedBtn = document.getElementById('enter-seed-btn')
+			const shareBtn = document.getElementById('share-btn')
+			const downloadBtn = document.getElementById('download-btn')
+
+			const jsonReq = new XMLHttpRequest()
+			jsonReq.open('GET', 'assets/BRICKCOLORS.json', false)
+			jsonReq.send(null)
+			if (!jsonReq.responseText) {
+				console.error('Failed to load BRICKCOLORS.json')
+			}
+			const brickcolors = JSON.parse(jsonReq.responseText || '{}')
+			function brickcolorToHex(num) {
+				let bc = brickcolors[num % brickcolors.length]
+				// highly unlikely but can still happen
+				if (!bc || !bc?.rgb) {
+					//return '#000000'
+					bc = brickcolors[randomInt(0, brickcolors.length)]
+				}
+				return `#${(
+					(1 << 24) +
+					(bc.rgb[0] << 16) +
+					(bc.rgb[1] << 8) +
+					bc.rgb[2]
+				)
+					.toString(16)
+					.slice(1)}`
+			}
+
+			/**
+			 * pdata -- painting data
+			 * {
+			 *  count: int,
+			 *  rectangles: [
+			 *      {
+			 *         color: int,
+			 *         x: int,
+			 *         y: int,
+			 *         width: int,
+			 *         height: int,
+			 *      }
+			 *  ]
+			 * }
+			 *
+			 * painting: <2b rectangle count 1-3><45b rectangle 1><45b rectangle 2>...
+			 * rectangle: <9b color><9b x><9b y><9b width><9b height>
+			 */
+			/* prettier-ignore */
+			const BASE64_CHARSET = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+			             'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+			             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_']
+			function pdataToBase64(pdata) {
+				if (!pdata) return
+
+				const bitArray = []
+
+				const countBits = pdata.count.toString(2).padStart(2, '0')
+				bitArray.push(...countBits)
+
+				pdata.rectangles.forEach((rect) => {
+					const colorBits = rect.color.toString(2).padStart(9, '0')
+					const xBits = rect.x.toString(2).padStart(9, '0')
+					const yBits = rect.y.toString(2).padStart(9, '0')
+					const widthBits = rect.width.toString(2).padStart(9, '0')
+					const heightBits = rect.height.toString(2).padStart(9, '0')
+
+					bitArray.push(
+						...colorBits,
+						...xBits,
+						...yBits,
+						...widthBits,
+						...heightBits
+					)
+				})
+
+				let base64String = ''
+				for (let i = 0; i < bitArray.length; i += 6) {
+					const chunk = bitArray
+						.slice(i, i + 6)
+						.join('')
+						.padEnd(6, '0')
+					const index = parseInt(chunk, 2)
+					base64String += BASE64_CHARSET[index]
+				}
+
+				return base64String
+			}
+			function pdataFromBase64(str) {
+				if (!str) return
+
+				const bitArray = []
+
+				for (const char of str) {
+					const index = BASE64_CHARSET.indexOf(char)
+					const bits = index.toString(2).padStart(6, '0')
+					bitArray.push(...bits)
+				}
+
+				const countBits = bitArray.splice(0, 2).join('')
+				const count = parseInt(countBits, 2)
+
+				const rectangles = []
+
+				for (let i = 0; i < count; i++) {
+					const colorBits = bitArray.splice(0, 9).join('')
+					const xBits = bitArray.splice(0, 9).join('')
+					const yBits = bitArray.splice(0, 9).join('')
+					const widthBits = bitArray.splice(0, 9).join('')
+					const heightBits = bitArray.splice(0, 9).join('')
+
+					rectangles.push({
+						color: parseInt(colorBits, 2),
+						x: parseInt(xBits, 2),
+						y: parseInt(yBits, 2),
+						width: parseInt(widthBits, 2),
+						height: parseInt(heightBits, 2),
+					})
+				}
+
+				return { count, rectangles }
+			}
+
+			function updateSeedText(b) {
+				//seedText.innerText = 'Seed: ' + b
+				seedText.innerText = b
+			}
+
+			function generatePainting() {
+				const count = randomInt(1, 3)
+				const rectangles = []
+				for (let i = 0; i < count; i++) {
+					const _min_size = MIN_SIZE
+					const x = randomInt(TRUE_BOUNDS_MIN, TRUE_BOUNDS_MAX)
+					const y = randomInt(TRUE_BOUNDS_MIN, TRUE_BOUNDS_MAX)
+					const width = randomInt(
+						_min_size,
+						Math.max(_min_size, TRUE_BOUNDS_MAX) // TRUE_BOUNDS_MAX - x
+					)
+					const height = randomInt(
+						_min_size,
+						Math.max(_min_size, TRUE_BOUNDS_MAX)
+					)
+					const color = randomInt(0, brickcolors.length)
+					rectangles.push({
+						x,
+						y,
+						width,
+						height,
+						color,
+					})
+				}
+
+				return {
+					count,
+					rectangles,
+				}
+			}
+
+			let lastPdata = undefined
+			function drawPainting(pdata) {
+				lastPdata = pdata
+
+				// 1. preparation
+				ctx.clearRect(0, 0, canvas.width, canvas.height)
+				ctx.fillStyle = CANVAS_COLOR
+				ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+				// 2. rectangles
+				const count = pdata.count
+				for (let i = 0; i < count; i++) {
+					let rect = pdata.rectangles[i]
+					//console.log('rect', rect, rect.x)
+
+					/*ctx.fillStyle = CANVAS_COLOR
+					ctx.fillRect(rect.x, rect.y, rect.width, rect.height)*/
+
+					//ctx.fillStyle = brickcolorToHex(brickcolors[rect.color])
+					ctx.fillStyle = brickcolorToHex(rect.color)
+					rect.x = (rect.x || count * 4) % TRUE_BOUNDS_MAX
+					rect.y = (rect.y || count * 4) % TRUE_BOUNDS_MAX
+					rect.width = (rect.width || count * MIN_SIZE) % TRUE_BOUNDS_MAX
+					rect.height = (rect.height || count * MIN_SIZE) % TRUE_BOUNDS_MAX
+					ctx.fillRect(
+						rect.x + BORDER_WIDTH,
+						rect.y + BORDER_WIDTH,
+						rect.width,
+						rect.height
+					)
+				}
+
+				// 3. borders
+				ctx.fillStyle = BORDER_COLOR
+				ctx.fillRect(0, 0, BORDER_WIDTH, canvas.height)
+				ctx.fillRect(
+					canvas.width - BORDER_WIDTH,
+					0,
+					BORDER_WIDTH,
+					canvas.height
+				)
+				ctx.fillRect(0, 0, canvas.width, BORDER_WIDTH)
+				ctx.fillRect(
+					0,
+					canvas.height - BORDER_WIDTH,
+					canvas.width,
+					BORDER_WIDTH
+				)
+				ctx.fillStyle = '#4f4950'
+				ctx.font = '15px serif'
+				ctx.fillText(
+					'https://qaptivator.github.io/cavecrawler-mapper/modern',
+					70,
+					17
+				)
+			}
+
+			function fullGenerate() {
+				const newPData = generatePainting()
+				//console.log('newPData', newPData)
+				drawPainting(newPData)
+				const newBase64Param = pdataToBase64(newPData)
+				history.replaceState(null, '', '#' + newBase64Param)
+				updateSeedText(newBase64Param)
+			}
+
+			generateBtn.addEventListener('click', () => {
+				fullGenerate()
+			})
+			document.addEventListener('keydown', (event) => {
+				if (event.key === 'E' || event.key === 'e') {
+					fullGenerate()
+				}
+			})
+
+			enterSeedBtn.addEventListener('click', () => {
+				const seed = prompt('Enter seed (Base64 text, or literally anything):')
+				if (seed) {
+					const paramPData = pdataFromBase64(seed)
+					if (paramPData) {
+						updateSeedText(seed)
+						drawPainting(paramPData)
+						history.replaceState(null, '', '#' + seed)
+					} else {
+						alert('Invalid seed format')
+					}
+				}
+			})
+
+			shareBtn.addEventListener('click', () => {
+				navigator.clipboard.writeText(window.location.href).then(() => {
+					alert('URL copied to clipboard')
+				})
+			})
+
+			downloadBtn.addEventListener('click', () => {
+				try {
+					const seed = seedText.innerText
+					ctx.fillStyle = '#d1d1d1'
+					ctx.font = '10px serif'
+					ctx.fillText(seed, BORDER_WIDTH + 1, BORDER_WIDTH + 11)
+					const dataURL = canvas.toDataURL('image/jpeg')
+					drawPainting(lastPdata)
+
+					const a = document.createElement('a')
+					a.href = dataURL
+					a.download = `modern_${seed}.jpg`
+
+					document.body.appendChild(a)
+					a.click()
+					document.body.removeChild(a)
+				} catch (error) {
+					console.error('Error downloading image:', error)
+				}
+			})
+
+			// document.location.search doesnt work here because live (five) server i use doesnt support url params, unlike nuxt
+			// so i hide the param with # and then remove it before parsing it
+			/*const params = new URLSearchParams(
+				document.location.toString().replace('#', '')
+			)
+			console.log('params', params, 'search', document.location.toString())
+			         const base64Param = params.get('b')*/
+			// this ALSO didnt work because i dont feel like parsing the url, so we will make it MUCH simpler
+			const pseed = document.location.toString().split('#')[1]
+			const paramPData = pdataFromBase64(pseed)
+			if (paramPData) {
+				updateSeedText(pseed)
+				drawPainting(paramPData)
+			} else {
+				fullGenerate()
+			}
+		</script>
+		<link
+			rel="stylesheet"
+			href="styles.css"
+		/>
+	</body>
+</html>
